@@ -16,16 +16,21 @@ export default function ChatPage (props: IChatPageProps) {
 
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
-    
+
     useEffect(() => {
         socket.once('message', (data: never) => {
-            const newMessages: never[] = [...messages, data] as never[];
+            const newMessages: never[] = [...messages, JSON.parse(data)] as never[];
             setMessages(newMessages);
         }); 
     }, [messages]);
     
     const sendMessage = () => {
-        socket.emit('message', message);
+        const newMessage = {
+            author: localStorage.getItem('user'),
+            message: message,
+            room: localStorage.getItem('room')
+        }
+        socket.emit('message', JSON.stringify(newMessage));
         setMessage('');
     }
 
@@ -40,7 +45,7 @@ export default function ChatPage (props: IChatPageProps) {
                         <Card style={{overflowY: 'scroll', maxHeight: '450px', height: '450px' }}>
                             <ListGroup variant="flush">
                                 {
-                                    messages.map((message, index) => <ListGroup.Item key={`${message}-${index}`}>{message}</ListGroup.Item>)
+                                    messages.map((message: any, index) => <ListGroup.Item key={`${message}-${index}`}>{message.author + ': ' + message.message}</ListGroup.Item>)
                                 }
                             </ListGroup>
                         </Card>

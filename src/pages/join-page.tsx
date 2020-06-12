@@ -6,18 +6,24 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { useState } from 'react';
+import { useHistory } from "react-router-dom";
+import socket from '../socket';
 
 export interface IJoinPageProps {
 }
 
 export default function JoinPage (props: IJoinPageProps) {
 
+  let history = useHistory();
   const [room, setRoom] = useState('');
   const [login, setLogin] = useState('');
 
   const joinRoom = () => {
-    const data = JSON.stringify({room, login});
-    console.log(data);
+    const JoinData = {user: login, room: room};
+    localStorage.setItem('user', login);
+    localStorage.setItem('room', room);
+    socket.emit('userJoinInRoom', JSON.stringify(JoinData));
+    history.push('/ChatPage');
   }
 
   return (

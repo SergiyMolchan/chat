@@ -13,12 +13,21 @@ app.use(express.urlencoded({extended: false}));
 
 const PORT = process.env.PORT || 4000;
 
-
 io.on('connection', socket => {
   console.log('conected')
+  
+  socket.on('userJoinInRoom', data => {
+    const UserIsJoin = JSON.parse(data);
+    
+    socket.join(UserIsJoin.room);
+    socket.emit('message', JSON.stringify({author: 'room', message: `${UserIsJoin.user} hello.`}));
+    socket.broadcast.to(UserIsJoin.room).emit(JSON.stringify({author: UserIsJoin.room, message: `${UserIsJoin.user} is join in room.`}))
+  });
 
   socket.on('message', data => {
-    io.emit('message', data);
+    const newMessage = JSON.parse(data);
+    
+    io.to(newMessage.room).emit('message', data);
   });
 
   socket.on('disconnect', () => {
