@@ -12,11 +12,11 @@ import socket from '../socket';
 export interface IJoinPageProps {
 }
 
-export default function JoinPage (props: IJoinPageProps) {
+const JoinPage: React.FC = (props: IJoinPageProps) => {
 
   let history = useHistory();
-  const [room, setRoom] = useState('');
-  const [login, setLogin] = useState('');
+  const [room, setRoom] = useState<string>('');
+  const [login, setLogin] = useState<string>('');
 
   useEffect(() => {
     localStorage.removeItem('user');
@@ -73,3 +73,5 @@ export default function JoinPage (props: IJoinPageProps) {
     </Container>
   );
 }
+
+export default JoinPage;

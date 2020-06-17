@@ -9,7 +9,7 @@ import {
 import JoinPage from './pages/join-page';
 import ChatPage from './pages/chat-page';
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
       <Switch>

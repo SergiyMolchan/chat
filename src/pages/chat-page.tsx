@@ -14,11 +14,11 @@ import Alert from 'react-bootstrap/Alert'
 export interface IChatPageProps {
 }
 
-export default function ChatPage(props: IChatPageProps) {
+const ChatPage: React.FC = (props: IChatPageProps) => {
 	let history = useHistory();
-	const [message, setMessage] = useState('');
-	const [messages, setMessages] = useState([]);
-	const [users, setUsers] = useState([]);
+	const [message, setMessage] = useState<string>('');
+	const [messages, setMessages] = useState<never[]>([]);
+	const [users, setUsers] = useState<never[]>([]);
 	const messagesRef: any = useRef<HTMLDivElement | null>(null);
 
 	useEffect(() => {
@@ -34,9 +34,8 @@ export default function ChatPage(props: IChatPageProps) {
 		});
 		messagesRef.current.scrollTo(0, 9999);
 	}, [messages, history]);
-
-	const sendMessage = (e: any) => {
-		e.preventDefault();
+	
+	const sendMessage = () => {
 		if (message) {
 			const newMessage = {
 				author: localStorage.getItem('user'),
@@ -46,6 +45,11 @@ export default function ChatPage(props: IChatPageProps) {
 			socket.emit('message', JSON.stringify(newMessage));
 			setMessage('');
 		}
+	}
+
+	const heandlePressEnter = (event: React.KeyboardEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		sendMessage();
 	}
 
 	return (
@@ -68,7 +72,7 @@ export default function ChatPage(props: IChatPageProps) {
 								</ListGroup>
 							</Card>
 
-							<Form style={{ display: 'flex' }} onSubmit={sendMessage}>
+							<Form style={{ display: 'flex' }} onSubmit={heandlePressEnter}>
 								<Form.Group controlId="formBasicEmail" style={{ width: '100%' }}>
 									<Form.Control type="text" placeholder="Enter room id" value={message} onChange={e => setMessage(e.target.value)}/>
 								</Form.Group>
@@ -99,3 +103,5 @@ export default function ChatPage(props: IChatPageProps) {
 		</Container>
 	);
 }
+
+export default ChatPage;
