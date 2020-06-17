@@ -1,11 +1,9 @@
 const path  = require('path');
 const express  = require('express');
-
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-
-//app.use('/api/auth', authRoutes);
+const users = require('./Users');
 
 app.use(express.static(path.join(__dirname, '/public'))); //path statics
 app.use(express.json());
@@ -14,24 +12,42 @@ app.use(express.urlencoded({extended: false}));
 const PORT = process.env.PORT || 4000;
 
 io.on('connection', socket => {
-  console.log('conected')
-  
   socket.on('userJoinInRoom', data => {
-    const UserIsJoin = JSON.parse(data);
-    
-    socket.join(UserIsJoin.room);
-    socket.emit('message', JSON.stringify({author: 'room', message: `${UserIsJoin.user} hello.`}));
-    socket.broadcast.to(UserIsJoin.room).emit(JSON.stringify({author: UserIsJoin.room, message: `${UserIsJoin.user} is join in room.`}))
+    const user = JSON.parse(data);
+    users.remove(socket.id);
+    users.add({
+      id: socket.id,
+      room: user.room,
+      user: user.user
+    });
+    socket.join(user.room);
+    socket.emit('updateUsers', JSON.stringify({users: users.getByRoom(user.room)}));
+    socket.to(user.room).emit('updateUsers', JSON.stringify({users: users.getByRoom(user.room)}));
+    socket.broadcast.to(user.room).emit('message', JSON.stringify({author: 'Room', message: `${user.user} is join in room.`}));
+    socket.emit('message', JSON.stringify({author: 'Room', message: `${user.user} hello.`}));
   });
 
   socket.on('message', data => {
     const newMessage = JSON.parse(data);
-    
     io.to(newMessage.room).emit('message', data);
   });
 
+  socket.on('userLeftFromRoom', () => {
+    if (users.get(socket.id)) {
+      const user = users.get(socket.id);
+      users.remove(socket.id);
+      socket.to(user.room).emit('message', JSON.stringify({author: 'Room', message: `${user.user} is left in room.`}));
+      socket.to(user.room).emit('updateUsers', JSON.stringify({users: users.getByRoom(user.room)}));
+    }
+  });
+
   socket.on('disconnect', () => {
-    console.log('disconnect')
+    if (users.get(socket.id)) {
+      const user = users.get(socket.id);
+      users.remove(socket.id);
+      socket.to(user.room).emit('message', JSON.stringify({author: 'Room', message: `${user.user} is left in room.`}));
+      socket.to(user.room).emit('updateUsers', JSON.stringify({users: users.getByRoom(user.room)}));
+    }
   });
 });
 

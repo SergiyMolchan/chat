@@ -5,7 +5,7 @@ import Form from 'react-bootstrap/Form';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHistory } from "react-router-dom";
 import socket from '../socket';
 
@@ -18,12 +18,28 @@ export default function JoinPage (props: IJoinPageProps) {
   const [room, setRoom] = useState('');
   const [login, setLogin] = useState('');
 
+  useEffect(() => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('room');
+    socket.emit('userLeftFromRoom');
+  });
+
+  const isValidForm = () => {
+    if (!!login && !!room) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   const joinRoom = () => {
-    const JoinData = {user: login, room: room};
-    localStorage.setItem('user', login);
-    localStorage.setItem('room', room);
-    socket.emit('userJoinInRoom', JSON.stringify(JoinData));
-    history.push('/ChatPage');
+    if (isValidForm()) {
+      const JoinData = {user: login, room: room};
+      localStorage.setItem('user', login);
+      localStorage.setItem('room', room);
+      socket.emit('userJoinInRoom', JSON.stringify(JoinData));
+      history.push('/ChatPage');
+    }
   }
 
   return (
@@ -36,25 +52,24 @@ export default function JoinPage (props: IJoinPageProps) {
                   <Card.Subtitle className="mb-2 text-muted" style={{textAlign: 'center'}}>Enter room id and your login</Card.Subtitle>
                   <hr/>
                   <Form>
-                  <Form.Group controlId="formBasicEmail">
-                      <Form.Label>Room id</Form.Label>
-                      <Form.Control type="text" placeholder="Enter room id" value={room} onChange={e => setRoom(e.target.value)} />
-                  </Form.Group>
+                    <Form.Group controlId="formBasicEmail">
+                        <Form.Label>Room id</Form.Label>
+                        <Form.Control type="text" placeholder="Enter room id" value={room} onChange={e => setRoom(e.target.value)} />
+                    </Form.Group>
 
-                  <Form.Group controlId="formBasicEmail">
-                      <Form.Label>Login</Form.Label>
-                      <Form.Control type="text" placeholder="Enter login" value={login} onChange={e => setLogin(e.target.value)}/>
-                  </Form.Group>
+                    <Form.Group controlId="formBasicEmail">
+                        <Form.Label>Login</Form.Label>
+                        <Form.Control type="text" placeholder="Enter login" value={login} onChange={e => setLogin(e.target.value)}/>
+                    </Form.Group>
 
-                  <Button variant="primary" type="button" style={{width: '100%'}} onClick={joinRoom}>
-                      Submit
-                  </Button>
+                    <Button variant="primary" type="button" style={{width: '100%'}} onClick={joinRoom} disabled={!isValidForm()}>
+                        Join
+                    </Button>
                   </Form>
               </Card.Body>
           </Card>
         </Col>
       </Row>
     </Container>
-
   );
 }
