@@ -1,4 +1,4 @@
-# finance-manager
+# chat
 link: https://easychat.azurewebsites.net/
 
 ## About application
