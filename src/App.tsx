@@ -14,10 +14,10 @@ const App: React.FC = () => {
     <Router>
       <Switch>
         <Route exact path="/">
-            <JoinPage />
+          <JoinPage />
         </Route>
         <Route exact path="/ChatPage">
-            <ChatPage />
+          <ChatPage />
         </Route>
         <Redirect to="/"/>
       </Switch>

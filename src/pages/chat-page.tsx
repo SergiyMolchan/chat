@@ -25,14 +25,21 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 		if (!localStorage.getItem('user') && !localStorage.getItem('room')) {
 			history.push('/');
 		}
-		socket.once('message', (data: never) => {
-			const newMessages: never[] = [...messages, JSON.parse(data)] as never[];
-			setMessages(newMessages);
-		});
-		socket.once('updateUsers', (data: never) => {
-			setUsers(JSON.parse(data).users);
-		});
-		messagesRef.current.scrollTo(0, 9999);
+		socket.onopen = (event: any) => console.log(event);
+		socket.onmessage = (messageEvent) => {
+			const message = JSON.parse(messageEvent.data);
+			if (message.type === 'message') {
+				const newMessages: never[] = [...messages, message.data] as never[];
+				setMessages(newMessages);
+				console.log(message, messages);
+				messagesRef.current.scrollTo(0, 9999);
+			} else if (message.type === 'updateUsers') {
+				console.log('users', message);
+				const {users} = message.data;
+				setUsers(users);
+			}
+			console.log(message);
+		};
 	}, [messages, history]);
 	
 	const sendMessage = () => {
@@ -41,16 +48,20 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 				author: localStorage.getItem('user'),
 				message: message,
 				room: localStorage.getItem('room')
-			}
-			socket.emit('message', JSON.stringify(newMessage));
+			};
+			const messageData = {
+				type: 'message',
+				data: newMessage
+			};
+			socket.send(JSON.stringify(messageData));
 			setMessage('');
 		}
-	}
+	};
 
 	const heandlePressEnter = (event: React.KeyboardEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		sendMessage();
-	}
+	};
 
 	return (
 		<Container>
@@ -102,6 +113,6 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 			</Row>
 		</Container>
 	);
-}
+};
 
 export default ChatPage;
