@@ -16,7 +16,6 @@ ws.on('connection', function connection(ws, req) {
   const id = req.socket.remoteAddress + Math.random();
   // message contain fields data (data format JSON) and type
   ws.on('message', message => {
-    console.log(message);
     const {type, data} = JSON.parse(message);
 
     if (type === 'userJoinInRoom') {
@@ -40,22 +39,23 @@ ws.on('connection', function connection(ws, req) {
         data: {author: 'room', message: `User ${user.user} join in room.`}
       };
 
-      const usersMessage = {
-          type: 'updateUsers',
-          data: {users: users.getByRoom(user.room)}
-        };
-        ws.send(JSON.stringify(welcomeMessage));
-        ws.send(JSON.stringify(usersMessage));
-        users.getAll().forEach(client => {
-          if (client.socket.readyState === ws.OPEN) {
-            if (client.user !== data.user){
-              client.socket.emit('message', JSON.stringify(message));
-            }
-            if (client.room === data.room) {
-              console.log('users in room', usersMessage);
-              client.socket.emit('updateUsers', JSON.stringify(usersMessage));
-            }
+      const usersListMessage = {
+        type: 'updateUsers',
+        data: {users: users.getByRoom(user.room)}
+      };
+
+      ws.send(JSON.stringify(welcomeMessage));
+      ws.send(JSON.stringify(usersListMessage));
+
+      users.getAll().forEach(client => {
+        if (client.socket.readyState === ws.OPEN && client.user !== data.user) {
+          if (client.room === data.room) {
+            client.socket.emit('message', JSON.stringify(message));
           }
+        }
+        if (client.room === data.room) {
+          client.socket.send(JSON.stringify(usersListMessage));
+        }
       });
 
     } else if (type === 'message') {
@@ -63,15 +63,14 @@ ws.on('connection', function connection(ws, req) {
         type: 'message',
         data: {author: data.author, message: data.message}
       };
+
       users.getAll().forEach(client => {
-        if (client.socket.readyState === ws.OPEN) {
-          console.log(client.id);
+        if (client.room === data.room) {
           client.socket.send(JSON.stringify(message));
         }
       });
 
     } else if (type === 'close') {
-      console.log('close', data);
       const message = {
         type: 'message',
         data: {author: 'room', message: `User `}
@@ -79,7 +78,6 @@ ws.on('connection', function connection(ws, req) {
 
       users.getAll().forEach(client => {
         if (client.socket.readyState === ws.OPEN) {
-          console.log(client.id);
           client.socket.send(JSON.stringify(message));
         }
       });

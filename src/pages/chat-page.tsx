@@ -34,7 +34,6 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 				console.log(message, messages);
 				messagesRef.current.scrollTo(0, 9999);
 			} else if (message.type === 'updateUsers') {
-				console.log('users', message);
 				const {users} = message.data;
 				setUsers(users);
 			}
