@@ -21,7 +21,7 @@ const JoinPage: React.FC = (props: IJoinPageProps) => {
   useEffect(() => {
     localStorage.removeItem('user');
     localStorage.removeItem('room');
-    socket.emit('userLeftFromRoom');
+
   });
 
   const isValidForm = () => {
@@ -30,17 +30,20 @@ const JoinPage: React.FC = (props: IJoinPageProps) => {
     } else {
       return false;
     }
-  }
+  };
 
   const joinRoom = () => {
     if (isValidForm()) {
-      const JoinData = {user: login, room: room};
+      const JoinData = JSON.stringify({
+          type: 'userJoinInRoom',
+          data: {user: login, room: room}
+        });
       localStorage.setItem('user', login);
       localStorage.setItem('room', room);
-      socket.emit('userJoinInRoom', JSON.stringify(JoinData));
+      socket.send(JoinData);
       history.push('/ChatPage');
     }
-  }
+  };
 
   return (
     <Container>
