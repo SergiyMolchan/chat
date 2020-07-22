@@ -3,6 +3,8 @@ const express  = require('express');
 const app = express();
 const WebwsServer = require('ws');
 const users = require('./Users');
+const redis = require("redis");
+const redisClient = redis.createClient();
 
 app.use(express.static(path.join(__dirname, '/build'))); //path statics
 app.use(express.json());
@@ -12,12 +14,24 @@ const PORT = process.env.PORT || 4000;
 
 const ws = new WebwsServer.Server({port: PORT + 1});
 
+redisClient.on('connect', () => {
+  console.log('connected');
+});
+
+// redisClient.set('test', 'test');
+//
+// redisClient.get('test', (err, reply) => {
+//   console.log('welcomeMessage', reply);
+// });
+
+
 ws.on('connection', function connection(ws, req) {
   const id = req.socket.remoteAddress + Math.random();
   // message contain fields data (data format JSON) and type
   ws.on('message', message => {
     const {type, data} = JSON.parse(message);
 
+    // user connect in room
     if (type === 'userJoinInRoom') {
       console.log('joined');
       const user = data;
@@ -29,9 +43,14 @@ ws.on('connection', function connection(ws, req) {
         socket: ws
       });
 
+      const dataForUser = {
+        type: 'id',
+        data: {userId: id}
+      };
+
       const welcomeMessage = {
         type: 'message',
-        data: {userId: id, author: 'room', message: `Welcome ${user.user}.`}
+        data: {author: 'room', message: `Welcome ${user.user}.`}
       };
 
       const message = {
@@ -44,67 +63,96 @@ ws.on('connection', function connection(ws, req) {
         data: {users: users.getByRoom(user.room)}
       };
 
-      ws.send(JSON.stringify(welcomeMessage));
-      ws.send(JSON.stringify(usersListMessage));
+      redisClient.set('welcomeMessage', JSON.stringify(welcomeMessage));
+      redisClient.set('message', JSON.stringify(message));
+      redisClient.set('usersListMessage', JSON.stringify(usersListMessage));
+
+      redisClient.get('welcomeMessage', (err, reply) => {
+        console.log('welcomeMessage', reply);
+        ws.send(reply);
+      });
+
+      redisClient.get('usersListMessage', (err, reply) => {
+        console.log('usersListMessage');
+        ws.send(reply);
+      });
+
+      ws.send(JSON.stringify(dataForUser));
 
       users.getAll().forEach(client => {
         if (client.socket.readyState === ws.OPEN && client.user !== data.user) {
           if (client.room === data.room) {
-            client.socket.emit('message', JSON.stringify(message));
+            redisClient.get('message', (err, reply) => {
+              console.log('message', reply);
+              client.socket.send(reply);
+            });
           }
         }
         if (client.room === data.room) {
-          client.socket.send(JSON.stringify(usersListMessage));
+          redisClient.get('usersListMessage', (err, reply) => {
+            console.log('usersListMessage');
+            client.socket.send(reply);
+          });
         }
       });
 
+    // new message
     } else if (type === 'message') {
       const message = {
         type: 'message',
         data: {author: data.author, message: data.message}
       };
 
+      redisClient.set('message', JSON.stringify(message));
+
       users.getAll().forEach(client => {
         if (client.room === data.room) {
-          client.socket.send(JSON.stringify(message));
+          redisClient.get('message', (err, reply) => {
+            console.log('message', reply);
+            client.socket.send(reply);
+          });
         }
       });
 
-    } else if (type === 'close') {
+    // user left from room
+    } else if (type === 'userLeftFromRoom') {
+      console.log('left');
+      const {id, user} = data;
+      users.remove(id);
       const message = {
         type: 'message',
-        data: {author: 'room', message: `User `}
+        data: {author: 'room', message: `User ${user} left from room.`}
       };
 
+
+      const usersListMessage = {
+        type: 'updateUsers',
+        data: {users: users.getByRoom(data.room)}
+      };
+
+      redisClient.set('message', JSON.stringify(message));
+      redisClient.set('usersListMessage', JSON.stringify(usersListMessage));
+
       users.getAll().forEach(client => {
-        if (client.socket.readyState === ws.OPEN) {
-          client.socket.send(JSON.stringify(message));
+        if (client.socket.readyState === ws.OPEN && client.user !== data.user) {
+          if (client.room === data.room) {
+            redisClient.get('message', (err, reply) => {
+              console.log('message', reply);
+              client.socket.send(reply);
+            });
+          }
+        }
+        if (client.room === data.room) {
+          redisClient.get('usersListMessage', (err, reply) => {
+            console.log('usersListMessage');
+            client.socket.send(reply);
+          });
         }
       });
     }
   });
 
 });
-
-
-//   ws.on('userLeftFromRoom', () => {
-//     if (users.get(ws.id)) {
-//       const user = users.get(ws.id);
-//       users.remove(ws.id);
-//       ws.to(user.room).emit('message', JSON.stringify({author: 'Room', message: `${user.user} is left in room.`}));
-//       ws.to(user.room).emit('updateUsers', JSON.stringify({users: users.getByRoom(user.room)}));
-//     }
-//   });
-//
-//   ws.on('disconnect', () => {
-//     if (users.get(ws.id)) {
-//       const user = users.get(ws.id);
-//       users.remove(ws.id);
-//       ws.to(user.room).emit('message', JSON.stringify({author: 'Room', message: `${user.user} is left in room.`}));
-//       ws.to(user.room).emit('updateUsers', JSON.stringify({users: users.getByRoom(user.room)}));
-//     }
-//   });
-// });
 
 (function start(){
   try {

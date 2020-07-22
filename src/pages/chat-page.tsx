@@ -36,6 +36,9 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 			} else if (message.type === 'updateUsers') {
 				const {users} = message.data;
 				setUsers(users);
+			} else if (message.type === 'id') {
+				const {userId} = message.data;
+				localStorage.setItem('id', userId);
 			}
 			console.log(message);
 		};
