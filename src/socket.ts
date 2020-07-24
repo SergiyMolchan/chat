@@ -1,2 +1,2 @@
-const socket = new WebSocket("ws://localhost:4001");
+const socket = new WebSocket("ws://localhost:8001");
 export default socket;
