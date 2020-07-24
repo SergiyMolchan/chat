@@ -12,7 +12,7 @@ app.use(express.static(path.join(__dirname, '/build'))); //path statics
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8070;
 
 const ws = new WebwsServer.Server({port: PORT + 1});
 

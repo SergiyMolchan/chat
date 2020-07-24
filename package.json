@@ -16,6 +16,7 @@
     "@types/socket.io": "^2.1.8",
     "@types/socket.io-client": "^1.4.33",
     "express": "^4.17.1",
+    "node-redis-pubsub": "^4.0.0",
     "nodemon": "^2.0.4",
     "pubsub": "^3.2.1",
     "react": "^16.13.1",

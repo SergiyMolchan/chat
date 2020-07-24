@@ -1,11 +1,11 @@
-const path  = require('path');
-const express  = require('express');
+const path = require('path');
+const express = require('express');
 const app = express();
 const WebwsServer = require('ws');
 const users = require('./Users');
 const redis = require("redis");
 const subscriber = redis.createClient();
-const publisher = subscriber.duplicate();
+const publisher = redis.createClient();
 
 app.use(express.static(path.join(__dirname, '/build'))); //path statics
 app.use(express.json());
@@ -27,14 +27,15 @@ subscriber.subscribe('message');
 subscriber.subscribe('usersListMessage');
 
 ws.on('connection', function connection(ws, req) {
-const id = req.socket.remoteAddress + Math.random();
-// message contain fields data (data format JSON) and type
+  const id = req.socket.remoteAddress + Math.random();
+  // message contain fields data (data format JSON) and type
   ws.on('message', message => {
     const {type, data} = JSON.parse(message);
 
     // user connect in room
     if (type === 'userJoinInRoom') {
       console.log('joined');
+
       const user = data;
       users.remove(id);
       users.add({
@@ -103,7 +104,9 @@ const id = req.socket.remoteAddress + Math.random();
       publisher.publish('message', JSON.stringify(message));
     }
 
+    // listener messages from redis
     subscriber.once('message', (channel, mess) => {
+      // update users list at join room and exit from room
       if (type === 'userLeftFromRoom' || type === 'userJoinInRoom') {
         users.getAll().forEach(client => {
           console.log('ok', channel, 'room', client.room === data.room && channel === 'usersListMessage');
@@ -113,6 +116,7 @@ const id = req.socket.remoteAddress + Math.random();
           }
         });
       }
+      // get message from redis then send message all users in room
       if (type === 'message') {
         console.log('mess Redis', mess);
         users.getAll().forEach(client => {
@@ -127,7 +131,7 @@ const id = req.socket.remoteAddress + Math.random();
 
 });
 
-(function start(){
+(function start() {
   try {
     app.listen(PORT, () => {
       console.info(`Server is runing on ${PORT}`);
