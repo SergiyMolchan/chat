@@ -52,18 +52,18 @@ ws.on('connection', function connection(ws, req) {
 
       const welcomeMessage = {
         type: 'message',
-        data: {author: 'room', message: `Welcome ${user.user}.`}
+        data: {room: data.room, author: 'room', message: `Welcome ${user.user}.`}
       };
 
       // this message do not send because bag
       const message = {
         type: 'message',
-        data: {author: 'room', message: `User ${user.user} join in room.`}
+        data: {room: data.room, author: 'room', message: `User ${user.user} join in room.`}
       };
 
       const usersListMessage = {
         type: 'updateUsers',
-        data: {users: users.getByRoom(user.room)}
+        data: {room: data.room, users: users.getByRoom(user.room)}
       };
 
       publisher.publish('usersListMessage', JSON.stringify(usersListMessage));
@@ -78,7 +78,7 @@ ws.on('connection', function connection(ws, req) {
     if (type === 'message') {
       const message = {
         type: 'message',
-        data: {author: data.author, message: data.message}
+        data: {room: data.room, author: data.author, message: data.message}
       };
 
       publisher.publish('message', JSON.stringify(message));
@@ -92,43 +92,45 @@ ws.on('connection', function connection(ws, req) {
       // this message do not send because bag
       const message = {
         type: 'message',
-        data: {author: 'room', message: `User ${user} left from room.`}
+        data: {room: data.room, author: 'room', message: `User ${user} left from room.`}
       };
 
       const usersListMessage = {
         type: 'updateUsers',
-        data: {users: users.getByRoom(data.room)}
+        data: {room: data.room, users: users.getByRoom(data.room)}
       };
 
       publisher.publish('usersListMessage', JSON.stringify(usersListMessage));
       publisher.publish('message', JSON.stringify(message));
     }
 
-    // listener messages from redis
-    subscriber.once('message', (channel, mess) => {
-      // update users list at join room and exit from room
-      if (type === 'userLeftFromRoom' || type === 'userJoinInRoom') {
-        users.getAll().forEach(client => {
-          console.log('ok', channel, 'room', client.room === data.room && channel === 'usersListMessage');
-          if (client.room === data.room && channel === 'usersListMessage') {
-            console.log("User update Redis");
-            client.socket.send(mess);
-          }
-        });
-      }
-      // get message from redis then send message all users in room
-      if (type === 'message') {
-        console.log('mess Redis', mess);
-        users.getAll().forEach(client => {
-          if (client.room === data.room && channel === 'message') {
-            client.socket.send(mess);
-          }
-        });
-      }
-    });
 
   });
 
+});
+
+// listener messages from redis
+subscriber.on('message', (channel, mess) => {
+  const {data} = JSON.parse(mess);
+  // update users list at join room and exit from room
+  if (channel === 'usersListMessage') {
+    users.getAll().forEach(client => {
+      console.log('ok', channel, 'room', client.room === data.room);
+      if (client.room === data.room) {
+        console.log("User update Redis");
+        client.socket.send(mess);
+      }
+    });
+  }
+  // get message from redis then send message all users in room
+  if (channel === 'message') {
+    console.log('mess Redis', mess);
+    users.getAll().forEach(client => {
+      if (client.room === data.room) {
+        client.socket.send(mess);
+      }
+    });
+  }
 });
 
 (function start() {
