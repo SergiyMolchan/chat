@@ -21,6 +21,18 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 	const [users, setUsers] = useState<never[]>([]);
 	const messagesRef: any = useRef<HTMLDivElement | null>(null);
 
+  const messageTypesHandler = (message: any) => {
+    if (message.type === 'message') {
+      const newMessages: never[] = [...messages, message.data] as never[];
+      setMessages(newMessages);
+      console.log(message, messages);
+      messagesRef.current.scrollTo(0, 9999);
+    } else if (message.type === 'updateUsers') {
+      const {users} = message.data;
+      setUsers(users);
+    }
+  };
+
 	useEffect(() => {
 		if (!localStorage.getItem('user') && !localStorage.getItem('room')) {
 			history.push('/');
@@ -28,18 +40,13 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 		socket.onopen = (event: any) => console.log(event);
 		socket.onmessage = (messageEvent) => {
 			const message = JSON.parse(messageEvent.data);
-			if (message.type === 'message') {
-				const newMessages: never[] = [...messages, message.data] as never[];
-				setMessages(newMessages);
-				console.log(message, messages);
-				messagesRef.current.scrollTo(0, 9999);
-			} else if (message.type === 'updateUsers') {
-				const {users} = message.data;
-				setUsers(users);
-			} else if (message.type === 'id') {
-				const {userId} = message.data;
-				localStorage.setItem('id', userId);
-			}
+			if (message.type === 'userJoinedInRoom') {
+        message.data.messageList.forEach((message: any) => messageTypesHandler(message));
+      } else if (message.type === 'userLeftFromRoom') {
+        message.data.messageList.forEach((message: any) => messageTypesHandler(message));
+      } else {
+        messageTypesHandler(message);
+      }
 			console.log(message);
 		};
 	}, [messages, history]);

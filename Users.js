@@ -7,15 +7,24 @@ class Users {
     this.users.push(user);
   }
 
-  get(id) {
-    return this.users.find(user => user.id === id);
+  get(socket) {
+    return this.users.find(user => user.socket === socket);
   }
 
-  remove(id) {
+  remove(socket) {
     const user = this.get(id);
-    
+
     if (user) {
-      this.users = this.users.filter(user => user.id !== id);
+      this.users = this.users.filter(user => user.socket !== socket);
+    }
+    return this.users;
+  }
+
+  removeBySocket(socket) {
+    const user = this.get(socket);
+
+    if (user) {
+      this.users = this.users.filter(user => user.socket !== socket);
     }
     return this.users;
   }

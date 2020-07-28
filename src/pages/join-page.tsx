@@ -21,17 +21,15 @@ const JoinPage: React.FC = (props: IJoinPageProps) => {
   useEffect(() => {
     const user = localStorage.getItem('user');
     const room = localStorage.getItem('room');
-    const id = localStorage.getItem('id');
-    if (!!user && !!room && !!id) {
+    if (!!user && !!room ) {
       const message = {
         type: 'userLeftFromRoom',
-        data: {user, room, id}
+        data: {user, room}
       };
       socket.send(JSON.stringify(message));
     }
     localStorage.removeItem('user');
     localStorage.removeItem('room');
-    localStorage.removeItem('id');
   });
 
   const isValidForm = () => {

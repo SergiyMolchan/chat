@@ -1,2 +1,2 @@
-const socket = new WebSocket("ws://localhost:8001");
+const socket = new WebSocket(`${'ws'}://${window.location.host}`);
 export default socket;

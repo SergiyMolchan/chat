@@ -16,17 +16,14 @@
     "@types/socket.io": "^2.1.8",
     "@types/socket.io-client": "^1.4.33",
     "express": "^4.17.1",
-    "node-redis-pubsub": "^4.0.0",
     "nodemon": "^2.0.4",
-    "pubsub": "^3.2.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-router-dom": "^5.2.0",
     "react-scripts": "3.4.1",
     "redis": "^3.0.2",
-    "socket.io": "^2.3.0",
-    "socket.io-client": "^2.3.0",
-    "typescript": "^3.7.5"
+    "typescript": "^3.7.5",
+    "ws": "^7.3.1"
   },
   "scripts": {
     "start": "react-scripts start",
