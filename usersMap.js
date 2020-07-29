@@ -1,3 +1,8 @@
+const redis = require('redis');
+const usersListRedis = redis.createClient();
+
+const usersRedis = require('./usersRedis');
+
 class UsersMap {
   constructor() {
     this.users = new Map();
@@ -5,9 +10,27 @@ class UsersMap {
   }
 
   add(user) {
+    // test redis start
+
+    /* set key and value */
+    // usersListRedis.set(JSON.stringify(user.socket), JSON.stringify({user: user.user, room: user.room}));
+    // usersListRedis.get(JSON.stringify(user.socket), (err, reply) => {
+    //   console.log('Redis users - add: ', reply);
+    // });
+
+    /* delete by key */
+    // usersListRedis.del(JSON.stringify(user.socket), (err, reply) => {
+    //   console.log('Redis users - del: ', reply);
+    // });
+
+    /* get all keys */
+    usersRedis.add(user);
+    console.log('Redis users in room: ', usersRedis.getByRoom(user.room));
+    // end test redis
+
+
     this.users.set(user.socket, user.user);
     this.rooms.set(user.socket, user.room);
-    this.getAllSockets();
   }
 
   getName(socket) {
