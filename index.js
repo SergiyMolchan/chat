@@ -1,4 +1,5 @@
 const express = require('express');
+const EventEmitter = require('events');
 const path = require('path');
 const redis = require('redis');
 const {Server: WSServer} = require('ws');
@@ -29,9 +30,21 @@ function heartbeat() {
   this.isAlive = true;
 }
 
+function socketGivesSignsOfLife() {
+  this.isLife = true;
+}
+
 ws.on('connection', function connection(ws, req) {
   ws.isAlive = true;
-  ws.on('pong', heartbeat);
+  ws.isLife = true;
+  const heartbeatAction = heartbeat.bind(ws);
+  console.log('is Life', ws.isLife);
+  ws.on('pong', () => {
+    if (ws.isLife === false) {
+      console.log('pong');
+      heartbeatAction();
+    }
+  });
   // message contain fields data (data format JSON) and type
   ws.on('message', message => {
     const {type, data} = JSON.parse(message);
@@ -41,26 +54,39 @@ ws.on('connection', function connection(ws, req) {
       userListPublishers.addUser(publisher, ws, data);
     } else if (type === 'message') { // new message
       messagePublisher.newMessage(publisher, data);
+      const socketSignsOfLife = socketGivesSignsOfLife.bind(ws);
+      socketSignsOfLife();
     } else if (type === 'userLeftFromRoom') { // user left from room
       console.log('left');
       userListPublishers.removeUser(publisher, ws);
     }
 
+    ws.on('close', () => {
+      userListPublishers.removeUser(publisher, ws);
+      console.log('socket closed');
+    });
+
+    EventEmitter.listenerCount(ws, 'pong'); // fix memory leak
   });
 });
 
 // close the connection with the user who dropped the connection
 const interval = setInterval(() => {
   usersMap.getAllSockets().forEach(user => {
+    console.log('is life', user.socket.isLife);
     if (user.socket.isAlive === false) {
       userListPublishers.removeUser(publisher, user.socket);
       return user.socket.terminate();
     }
-    user.socket.isAlive = false;
     // console.log('ping start: ', user, 'ping end');
-    user.socket.ping();
+    if (user.socket.isLife === false) {
+      user.socket.isAlive = false;
+      user.socket.ping();
+      console.log('ping');
+    }
+    user.socket.isLife = false;
   });
-}, 30000);
+}, 5000);
 
 ws.on('close', () => {
   clearInterval(interval);
