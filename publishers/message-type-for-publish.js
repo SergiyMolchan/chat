@@ -1,10 +1,14 @@
-const usersMap = require('../usersMap');
+const usersMap = require('../users-map');
+const usersRedis = require('../users-redis');
 
 const responses = {
-  usersListMessage: (room) => ({
-    type: 'updateUsers',
-    data: {room, users: usersMap.getByRoom(room)}
-  }),
+  usersListMessage: async (room) => {
+    const users = await usersMap.getByRoom(room);
+    return {
+      type: 'updateUsers',
+      data: {room, users: users}
+    }
+  },
   message: (room, author, message) => ({
     type: 'message',
     data: {room, author, message}

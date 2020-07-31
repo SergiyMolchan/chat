@@ -1,4 +1,4 @@
-const usersMap = require('../usersMap');
+const usersMap = require('../users-map');
 
 const newMessageSubscriber = message => {
   const {data} = JSON.parse(message);

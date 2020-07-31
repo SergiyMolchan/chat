@@ -1,4 +1,4 @@
-const responses = require('./messageTypeForPublish');
+const responses = require('./message-type-for-publish');
 
 module.exports.newMessage = (publisher, {room, author, message} = data) => {
   const newMessage = JSON.stringify(responses.message(room, author, message));

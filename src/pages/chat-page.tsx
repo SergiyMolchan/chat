@@ -6,7 +6,7 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import ListGroup from 'react-bootstrap/ListGroup'
-import { useState, useEffect, useRef } from 'react';
+import {useState, useEffect, useRef, useCallback} from 'react';
 import socket from '../socket';
 import { useHistory } from 'react-router-dom';
 import Alert from 'react-bootstrap/Alert'
@@ -21,7 +21,7 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 	const [users, setUsers] = useState<never[]>([]);
 	const messagesRef: any = useRef<HTMLDivElement | null>(null);
 
-  const messageTypesHandler = (message: any) => {
+  const messageTypesHandler = useCallback((message: any) => {
     if (message.type === 'message') {
       const newMessages: never[] = [...messages, message.data] as never[];
       setMessages(newMessages);
@@ -31,7 +31,8 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
       const {users} = message.data;
       setUsers(users);
     }
-  };
+    console.log(message);
+  }, [messages, messagesRef]);
 
 	useEffect(() => {
 		if (!localStorage.getItem('user') && !localStorage.getItem('room')) {
@@ -40,6 +41,7 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 		socket.onopen = (event: any) => console.log(event);
 		socket.onmessage = (messageEvent) => {
 			const message = JSON.parse(messageEvent.data);
+			console.log(message);
 			if (message.type === 'userJoinedInRoom') {
         message.data.messageList.forEach((message: any) => messageTypesHandler(message));
       } else if (message.type === 'userLeftFromRoom') {
@@ -49,8 +51,8 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
       }
 			console.log(message);
 		};
-	}, [messages, history]);
-	
+	}, [messages, history, messageTypesHandler]);
+
 	const sendMessage = () => {
 		if (message) {
 			const newMessage = {
