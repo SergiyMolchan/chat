@@ -1,5 +1,5 @@
-const usersMap = require('../users-map');
-const usersRedis = require('../users-redis');
+const usersMap = require('../maps/users-map');
+const usersRedis = require('../maps/users-redis');
 
 const responses = {
   usersListMessage: async (room) => {

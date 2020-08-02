@@ -3,7 +3,8 @@ const EventEmitter = require('events');
 const path = require('path');
 const redis = require('redis');
 const {Server: WSServer} = require('ws');
-const usersMap = require('./users-map');
+const usersMap = require('./maps/users-map');
+const activeUsersMap = require('./maps/active-users-map');
 const userListPublishers = require('./publishers/user-list-publishers');
 const messagePublisher = require('./publishers/message-publisher');
 const updateUserSubscriber = require('./subscribers/update-user-subscriber');
@@ -30,17 +31,18 @@ function heartbeat() {
   this.isAlive = true;
 }
 
-function socketGivesSignsOfLife() {
-  this.isLife = true;
+function socketGivesSignsOfLife(socket) {
+  activeUsersMap.setStatus(socket, true);
 }
 
 ws.on('connection', function connection(ws, req) {
   ws.isAlive = true;
-  ws.isLife = true;
+  activeUsersMap.setStatus(ws, true);
   const heartbeatAction = heartbeat.bind(ws);
-  console.log('is Life', ws.isLife);
+  console.log('is Life', activeUsersMap.getStatus(ws));
+
   ws.on('pong', () => {
-    if (ws.isLife === false) {
+    if (activeUsersMap.getStatus(ws) === false) {
       console.log('pong');
       heartbeatAction();
     }
@@ -55,7 +57,7 @@ ws.on('connection', function connection(ws, req) {
     } else if (type === 'message') { // new message
       messagePublisher.newMessage(publisher, data);
       const socketSignsOfLife = socketGivesSignsOfLife.bind(ws);
-      socketSignsOfLife();
+      socketSignsOfLife(ws);
     } else if (type === 'userLeftFromRoom') { // user left from room
       console.log('left');
       userListPublishers.removeUser(publisher, ws);
@@ -73,18 +75,17 @@ ws.on('connection', function connection(ws, req) {
 // close the connection with the user who dropped the connection
 const interval = setInterval(() => {
   usersMap.getAllSockets().forEach(user => {
-    console.log('is life', user.socket.isLife);
+    console.log('is life', activeUsersMap.getStatus(user.socket));
     if (user.socket.isAlive === false) {
       userListPublishers.removeUser(publisher, user.socket);
       return user.socket.terminate();
     }
-    // console.log('ping start: ', user, 'ping end');
-    if (user.socket.isLife === false) {
+    if (activeUsersMap.getStatus(user.socket) === false) {
       user.socket.isAlive = false;
       user.socket.ping();
       console.log('ping');
     }
-    user.socket.isLife = false;
+    activeUsersMap.setStatus(user.socket, false);
   });
 }, 5000);
 

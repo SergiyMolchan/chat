@@ -1,4 +1,4 @@
-const usersMap = require('../users-map');
+const usersMap = require('../maps/users-map');
 const responses = require('./message-type-for-publish');
 
 module.exports.addUser = (publisher, socket, {user, room} = user) => {
