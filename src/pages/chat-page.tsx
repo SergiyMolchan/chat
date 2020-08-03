@@ -36,9 +36,20 @@ const ChatPage: React.FC = (props: IChatPageProps) => {
 
 	useEffect(() => {
 		if (!localStorage.getItem('user') && !localStorage.getItem('room')) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('room');
 			history.push('/');
 		}
-		socket.onopen = (event: any) => console.log(event);
+		socket.onopen = (event: any) => {
+      const login = localStorage.getItem('user');
+      const room = localStorage.getItem('room');
+      const JoinData = JSON.stringify({
+        type: 'userJoinInRoom',
+        data: {user: login, room: room}
+      });
+      socket.send(JoinData);
+      history.push('/ChatPage');
+    };
 		socket.onmessage = (messageEvent) => {
 			const message = JSON.parse(messageEvent.data);
 			console.log(message);

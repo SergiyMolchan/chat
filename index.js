@@ -112,3 +112,8 @@ function start() {
 		throw Error(error);
 	}
 }
+
+// send index.html no all get requests
+app.get('*', (req, res) => {
+	res.sendFile(path.resolve('build', 'index.html'));
+});
