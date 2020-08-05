@@ -1,0 +1,14 @@
+config:
+  target: "ws://127.0.0.1:8080"
+  ensure:
+    maxErrorRate: 10000
+  phases:
+    - duration: 30
+      arrivalRate: 20
+      rampTo: 200
+      name: "WebSocket chat"
+scenarios:
+  - engine: "ws"
+    flow:
+      - send: '{"type":"message","data":{"room":"1","author":"z","message":"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."}}'
+      - send: '{"type":"updateUsers","data":{"room":"1","users":[{"user":"a","room":"1"},{"user":"z","room":"1"}]}}'

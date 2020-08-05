@@ -23,7 +23,7 @@ publisher.on('connect', () => console.log('Redis cluster publisher connected'));
 publisher.on('close', () => console.log('Redis cluster publisher disconnected'));
 
 /* default redis */
-
+//
 // const redis = require('redis');
 // const subscriber = redis.createClient(6379, '127.0.0.1');
 // const publisher = redis.createClient(6379, '127.0.0.1');
