@@ -1,7 +1,6 @@
 const express = require('express');
 const EventEmitter = require('events');
 const path = require('path');
-const redis = require('redis');
 const { Server: WSServer } = require('ws');
 const usersMap = require('./maps/users-map');
 const activeUsersMap = require('./maps/active-users-map');
@@ -10,8 +9,26 @@ const messagePublisher = require('./publishers/message-publisher');
 const updateUserSubscriber = require('./subscribers/update-user-subscriber');
 const newMessageSubscriber = require('./subscribers/message-subscriber');
 const app = express();
-const subscriber = redis.createClient();
-const publisher = redis.createClient();
+
+const Redis = require('ioredis');
+const redisClusterNodes = require('./redis-cluster-list');
+
+const subscriber = new Redis.Cluster(redisClusterNodes);
+const publisher = new Redis.Cluster(redisClusterNodes);
+
+subscriber.on('connect', () => console.log('Redis cluster subscriber connected'));
+subscriber.on('close', () => console.log('Redis cluster subscriber disconnected'));
+
+publisher.on('connect', () => console.log('Redis cluster publisher connected'));
+publisher.on('close', () => console.log('Redis cluster publisher disconnected'));
+
+/* default redis */
+
+// const redis = require('redis');
+// const subscriber = redis.createClient(6379, '127.0.0.1');
+// const publisher = redis.createClient(6379, '127.0.0.1');
+// subscriber.on('connect', () => console.log('subscriber connected'));
+// publisher.on('connect', () => console.log('publisher connected'));
 
 app.use(express.static(path.join(__dirname, '/build'))); //path statics
 app.use(express.json());
@@ -20,9 +37,6 @@ app.use(express.urlencoded({ extended: false }));
 const PORT = process.env.PORT || 8080;
 
 const ws = new WSServer({ server: start() });
-
-subscriber.on('connect', () => console.log('subscriber connected', PORT));
-publisher.on('connect', () => console.log('publisher connected', PORT));
 
 subscriber.subscribe('message');
 subscriber.subscribe('usersListMessage');

@@ -19,11 +19,11 @@ const JoinPage: React.FC = (props: IJoinPageProps) => {
   const [login, setLogin] = useState<string>('');
 
   useEffect(() => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('room');
     const user = localStorage.getItem('user');
     const room = localStorage.getItem('room');
     if (!!user && !!room ) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('room');
       const message = {
         type: 'userLeftFromRoom',
         data: {user, room}
