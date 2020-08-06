@@ -1,5 +1,5 @@
+// const usersRedis = require('./users-redis-cluster');
 const usersRedis = require('./users-redis');
-
 class UsersMap {
 	constructor() {
 		this.users = new Map();
