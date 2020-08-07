@@ -1,3 +1,7 @@
+FROM ubuntu:20.04
+
+RUN mkdir -p /usr/src/app
+
 FROM node:12
 
 WORKDIR /usr/src/app
